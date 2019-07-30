@@ -1,0 +1,25 @@
+权限控制，通过数据库表进行相应的设置，
+web界面树状权限列表也是将树状节点与数据库对应，使得不同用户登录时，map中存放的web端显示的树状列表内容不同
+
+而且，链接相应触发不同的control  如superadmin下的control也是运行的，加入断点可
+
+com.rbac.console.controller.VisitorController   获取对应菜单
+  List<ConsoleUser> example = consoleUserService.selectConsoleUserByExample(userExample);
+            if (example.size() == 1) {
+                ConsoleUser consoleUser = example.get(0);
+                if (consoleUser.getUserStatus() != null && consoleUser.getUserStatus() == 1) {// 启用
+                    HashMap<String, String> hashMap = new HashMap<String, String>();
+                    hashMap.put("userId", consoleUser.getId().toString());
+                    hashMap.put("parentId", "1");
+                    List<ConsoleMenu> consoleMenusByUserId = consoleMenuService.getConsoleMenusByUserId(hashMap);
+                    if (consoleMenusByUserId != null && consoleMenusByUserId.size() > 0) {
+                            Map<Object, Map<Object, List<ConsoleMenu>>> menuMap = new LinkedHashMap<Object, Map<Object, List<ConsoleMenu>>>();
+                            menuMap = consoleMenuService.getClassMap(consoleMenusByUserId, consoleUser.getId());
+                            SessionInfo sessionInfo = new SessionInfo();
+                            sessionInfo.setConsoleUser(consoleUser);
+                            sessionInfo.setLoginDate(new Date());
+                            HttpSession session = request.getSession();
+                            session.setAttribute("adminSessionInfo",sessionInfo);
+                            session.setAttribute("topMenu", consoleMenusByUserId);
+                            session.setAttribute("allMenu", menuMap);
+                            modelAndView.setViewName("redirect:/"+ consoleMenusByUserId.get(0).getMenuHref()+ "");// 默认的第一个地址
